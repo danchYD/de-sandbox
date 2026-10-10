@@ -1,0 +1,57 @@
+services:
+  minio:
+    image: coollabsio/minio:RELEASE.2025-04-22T22-12-26Z
+    container_name: minio
+    volumes:
+      - minio-data:/data
+      - minio-config:/root/.minio
+    networks:
+      - sbox-net
+    ports:
+      - "${MINIO_API_PORT}:9000"
+      - "${MINIO_CONSOLE_PORT}:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+      start_period: 10s
+
+  postgres-meta:
+    image: postgres:18-alpine
+    container_name: postgres-meta
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-meta:/var/lib/postgresql
+    networks:
+      - sbox-net
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+      start_period: 10s
+    
+
+volumes:
+  minio-data:
+    name: minio-data
+  minio-config:
+    name: minio-config
+  postgres-meta:
+    name: postgres-meta
+
+networks:
+  sbox-net:
+    name: sbox-net
