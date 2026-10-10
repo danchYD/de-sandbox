@@ -8,11 +8,11 @@ services:
     networks:
       - sbox-net
     ports:
-      - "${MINIO_API_PORT}:9000"
-      - "${MINIO_CONSOLE_PORT}:9001"
+      - "${MINIO_API_PORT:?Set MINIO_API_PORT in .env}:9000"
+      - "${MINIO_CONSOLE_PORT:?Set MINIO_CONSOLE_PORT in .env}:9001"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Set MINIO_ROOT_USER in .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env}
     restart: unless-stopped
     command: server /data --console-address ":9001"
     healthcheck:
@@ -22,22 +22,22 @@ services:
       retries: 3
       start_period: 10s
 
-  postgres-meta:
+  postgres:
     image: postgres:18-alpine
-    container_name: postgres-meta
+    container_name: postgres
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in .env}
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     volumes:
-      - postgres-meta:/var/lib/postgresql
+      - postgres:/var/lib/postgresql
     networks:
       - sbox-net
     ports:
-      - "${POSTGRES_PORT}:5432"
+      - "${POSTGRES_PORT:?Set POSTGRES_PORT in .env}:5432"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:?Set POSTGRES_USER in .env} -d ${POSTGRES_DB:?Set POSTGRES_DB in .env}"]
       interval: 30s
       timeout: 20s
       retries: 3
@@ -46,12 +46,8 @@ services:
 
 volumes:
   minio-data:
-    name: minio-data
   minio-config:
-    name: minio-config
-  postgres-meta:
-    name: postgres-meta
+  postgres:
 
 networks:
   sbox-net:
-    name: sbox-net
